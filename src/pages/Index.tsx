@@ -11,7 +11,7 @@ import { AlertsPanel } from '@/components/modules/AlertsPanel';
 import { SettingsPanel } from '@/components/modules/SettingsPanel';
 
 const moduleConfig: Record<string, { title: string; subtitle: string }> = {
-  dashboard: { title: 'Dashboard', subtitle: 'Overview of your payroll system' },
+  dashboard: { title: 'Dashboard', subtitle: 'Overview of SIMATS Payroll Roll AI system' },
   employees: { title: 'Employee Management', subtitle: 'Manage employee records and information' },
   payroll: { title: 'Payroll Processing', subtitle: 'Process and manage payroll transactions' },
   payslips: { title: 'Payslip Viewer', subtitle: 'View detailed salary breakdowns' },

@@ -54,8 +54,8 @@ export function Sidebar({ activeModule, onModuleChange }: SidebarProps) {
             exit={{ opacity: 0 }}
             className="overflow-hidden"
           >
-            <h1 className="text-lg font-bold text-sidebar-foreground">PayrollAI</h1>
-            <p className="text-xs text-sidebar-foreground/60">Enterprise System</p>
+            <h1 className="text-lg font-bold text-sidebar-foreground">SIMATS</h1>
+            <p className="text-xs text-sidebar-foreground/60">Payroll Roll AI</p>
           </motion.div>
         )}
       </div>
