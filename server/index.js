@@ -252,6 +252,12 @@ app.get('/api/departments', async (req, res) => {
   }
 });
 
-app.listen(PORT, 'localhost', () => {
-  console.log(`Backend server running on http://localhost:${PORT}`);
+pool.query('SELECT 1').then(() => {
+  console.log('Database connected successfully');
+}).catch(err => {
+  console.error('Database connection error:', err.message);
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Backend server running on http://0.0.0.0:${PORT}`);
 });
