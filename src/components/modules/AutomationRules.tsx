@@ -1,7 +1,7 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
-  ClipboardList,
   Plus,
   Edit,
   Trash2,
@@ -10,10 +10,10 @@ import {
   AlertCircle,
   CheckCircle,
   Zap,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { PayrollRule } from '@/types/payroll';
-import { mockPayrollRules } from '@/data/mockData';
+import { api, PayrollRule } from '@/lib/api';
 
 const ruleTypeConfig = {
   tax: { label: 'Tax', color: 'bg-warning/10 text-warning' },
@@ -23,20 +23,34 @@ const ruleTypeConfig = {
 };
 
 export function AutomationRules() {
-  const [rules, setRules] = useState<PayrollRule[]>(mockPayrollRules);
-  const [editingRule, setEditingRule] = useState<string | null>(null);
+  const [localToggles, setLocalToggles] = useState<Record<string, boolean>>({});
 
-  const toggleRuleStatus = (ruleId: string) => {
-    setRules((prev) =>
-      prev.map((rule) =>
-        rule.id === ruleId ? { ...rule, isActive: !rule.isActive } : rule
-      )
-    );
+  const { data: rules = [], isLoading } = useQuery({
+    queryKey: ['rules'],
+    queryFn: api.getRules,
+  });
+
+  const toggleRuleStatus = (ruleId: string, currentStatus: boolean) => {
+    setLocalToggles((prev) => ({
+      ...prev,
+      [ruleId]: prev[ruleId] !== undefined ? !prev[ruleId] : !currentStatus,
+    }));
   };
+
+  const getRuleStatus = (rule: PayrollRule) => {
+    return localToggles[rule.id] !== undefined ? localToggles[rule.id] : rule.isActive;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold text-foreground">Automation Rules</h2>
@@ -50,7 +64,6 @@ export function AutomationRules() {
         </button>
       </div>
 
-      {/* Rule Info Banner */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -70,10 +83,10 @@ export function AutomationRules() {
         </div>
       </motion.div>
 
-      {/* Rules List */}
       <div className="space-y-4">
         {rules.map((rule, index) => {
-          const typeConfig = ruleTypeConfig[rule.type];
+          const typeConfig = ruleTypeConfig[rule.type as keyof typeof ruleTypeConfig] || ruleTypeConfig.tax;
+          const isActive = getRuleStatus(rule);
           
           return (
             <motion.div
@@ -81,18 +94,22 @@ export function AutomationRules() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
+              whileHover={{ scale: 1.01 }}
               className={cn(
                 'bg-card rounded-xl border border-border p-5 transition-all duration-300',
-                !rule.isActive && 'opacity-60'
+                !isActive && 'opacity-60'
               )}
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4">
                   <div className="flex flex-col items-center">
                     <span className="text-xs text-muted-foreground mb-1">Priority</span>
-                    <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
+                    <motion.span 
+                      whileHover={{ scale: 1.1 }}
+                      className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold"
+                    >
                       {rule.priority}
-                    </span>
+                    </motion.span>
                   </div>
                   <div>
                     <div className="flex items-center gap-3 mb-2">
@@ -118,15 +135,15 @@ export function AutomationRules() {
 
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => toggleRuleStatus(rule.id)}
+                    onClick={() => toggleRuleStatus(rule.id, rule.isActive)}
                     className={cn(
                       'flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
-                      rule.isActive
+                      isActive
                         ? 'bg-success/10 text-success'
                         : 'bg-muted text-muted-foreground'
                     )}
                   >
-                    {rule.isActive ? (
+                    {isActive ? (
                       <>
                         <ToggleRight className="w-4 h-4" />
                         Active
@@ -151,30 +168,29 @@ export function AutomationRules() {
         })}
       </div>
 
-      {/* Rule Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="metric-card">
+        <motion.div whileHover={{ scale: 1.02 }} className="metric-card">
           <p className="text-sm text-muted-foreground">Total Rules</p>
           <p className="text-2xl font-bold text-foreground">{rules.length}</p>
-        </div>
-        <div className="metric-card">
+        </motion.div>
+        <motion.div whileHover={{ scale: 1.02 }} className="metric-card">
           <p className="text-sm text-muted-foreground">Active Rules</p>
           <p className="text-2xl font-bold text-success">
-            {rules.filter((r) => r.isActive).length}
+            {rules.filter((r) => getRuleStatus(r)).length}
           </p>
-        </div>
-        <div className="metric-card">
+        </motion.div>
+        <motion.div whileHover={{ scale: 1.02 }} className="metric-card">
           <p className="text-sm text-muted-foreground">Tax Rules</p>
           <p className="text-2xl font-bold text-warning">
             {rules.filter((r) => r.type === 'tax').length}
           </p>
-        </div>
-        <div className="metric-card">
+        </motion.div>
+        <motion.div whileHover={{ scale: 1.02 }} className="metric-card">
           <p className="text-sm text-muted-foreground">Deduction Rules</p>
           <p className="text-2xl font-bold text-info">
             {rules.filter((r) => r.type === 'deduction').length}
           </p>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

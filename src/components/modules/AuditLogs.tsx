@@ -1,9 +1,9 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
   Shield,
   Search,
-  Filter,
   Download,
   Calendar,
   User,
@@ -11,10 +11,10 @@ import {
   Info,
   AlertTriangle,
   XCircle,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { AuditLog } from '@/types/payroll';
-import { mockAuditLogs } from '@/data/mockData';
+import { api, AuditLog } from '@/lib/api';
 
 const severityConfig = {
   info: { icon: Info, color: 'text-info', bg: 'bg-info/10', label: 'Info' },
@@ -24,9 +24,14 @@ const severityConfig = {
 };
 
 export function AuditLogs() {
-  const [logs] = useState<AuditLog[]>(mockAuditLogs);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSeverity, setSelectedSeverity] = useState('all');
+
+  const { data: logs = [], isLoading } = useQuery({
+    queryKey: ['auditLogs'],
+    queryFn: api.getAuditLogs,
+    refetchInterval: 10000,
+  });
 
   const filteredLogs = logs.filter((log) => {
     const matchesSearch =
@@ -45,9 +50,16 @@ export function AuditLogs() {
     };
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
         <div className="flex items-center gap-3">
           <div className="relative flex-1 sm:w-80">
@@ -84,7 +96,6 @@ export function AuditLogs() {
         </div>
       </div>
 
-      {/* Severity Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {Object.entries(severityConfig).map(([key, config]) => {
           const count = logs.filter((l) => l.severity === key).length;
@@ -95,7 +106,9 @@ export function AuditLogs() {
               key={key}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-card rounded-xl border border-border p-4"
+              whileHover={{ scale: 1.02 }}
+              className="bg-card rounded-xl border border-border p-4 cursor-pointer"
+              onClick={() => setSelectedSeverity(key)}
             >
               <div className="flex items-center gap-3">
                 <div className={cn('p-2 rounded-lg', config.bg)}>
@@ -111,7 +124,6 @@ export function AuditLogs() {
         })}
       </div>
 
-      {/* Logs List */}
       <div className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="p-4 border-b border-border flex items-center gap-2">
           <Shield className="w-5 h-5 text-primary" />
@@ -119,17 +131,17 @@ export function AuditLogs() {
           <span className="text-sm text-muted-foreground">({filteredLogs.length} entries)</span>
         </div>
 
-        <div className="divide-y divide-border">
+        <div className="divide-y divide-border max-h-[500px] overflow-y-auto">
           {filteredLogs.map((log, index) => {
-            const config = severityConfig[log.severity];
+            const config = severityConfig[log.severity as keyof typeof severityConfig] || severityConfig.info;
             const Icon = config.icon;
             const { date, time } = formatTimestamp(log.timestamp);
             
             return (
               <motion.div
                 key={log.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.03 }}
                 className="p-4 hover:bg-muted/50 transition-colors"
               >
